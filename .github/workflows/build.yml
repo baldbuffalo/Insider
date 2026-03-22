@@ -30,7 +30,7 @@ jobs:
         run: xcodegen generate
 
       # ── 5. Build archive (no signing) ─────────────────────────────────
-            - name: Build archive
+      - name: Build archive
         run: |
           set -o pipefail
           xcodebuild archive \
