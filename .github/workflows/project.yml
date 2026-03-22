@@ -1,0 +1,40 @@
+name: Insider
+options:
+  bundleIdPrefix: com.insider
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "15.0"
+
+targets:
+  Insider:
+    type: application
+    platform: iOS
+    sources:
+      - path: Insider
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.insider.app
+        PRODUCT_NAME: Insider
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
+        ENABLE_BITCODE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+    info:
+      path: Insider/Info.plist
+      properties:
+        UILaunchScreen:
+          UIColorName: ""
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
