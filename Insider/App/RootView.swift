@@ -1,25 +1,47 @@
 import SwiftUI
 
-struct RootView: View {
-    @State private var isLoaded = false
+enum AppState {
+case signIn
+case loading
+case main
+}
 
-    var body: some View {
-        ZStack {
-            if isLoaded {
-                HomeView()
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .bottom).combined(with: .opacity),
-                        removal: .opacity
-                    ))
-            } else {
-                LoadingView(onComplete: {
-                    withAnimation(.easeInOut(duration: 0.6)) {
-                        isLoaded = true
-                    }
-                })
-                .transition(.opacity.combined(with: .scale(scale: 1.04)))
-            }
+struct RootView: View {
+@State private var appState: AppState = .signIn
+@State private var signedInUser: GoogleUser? = nil
+
+var body: some View {
+    ZStack {
+        switch appState {
+        case .signIn:
+            SignInView(onSignedIn: { user in
+                signedInUser = user
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    appState = .loading
+                }
+            })
+            .transition(.opacity)
+
+        case .loading:
+            LoadingView(user: signedInUser, onComplete: {
+                withAnimation(.easeInOut(duration: 0.6)) {
+                    appState = .main
+                }
+            })
+            .transition(.asymmetric(
+                insertion: .opacity,
+                removal: .opacity.combined(with: .scale(scale: 1.04))
+            ))
+
+        case .main:
+            HomeView()
+                .transition(.asymmetric(
+                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                    removal: .opacity
+                ))
         }
-        .animation(.easeInOut(duration: 0.6), value: isLoaded)
     }
+    .animation(.easeInOut(duration: 0.5), value: appState)
+}
+
 }
