@@ -21,7 +21,6 @@ struct HomeView: View {
         ZStack(alignment: .bottom) {
             Color(hex: "0D0D14").ignoresSafeArea()
 
-            // Ambient glow top left
             Circle()
                 .fill(Color(hex: "5B4DFF"))
                 .frame(width: 280, height: 280)
@@ -31,15 +30,11 @@ struct HomeView: View {
                 .allowsHitTesting(false)
 
             VStack(spacing: 0) {
-                // Header
                 headerSection
-
-                // Tabs
                 tabSection
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
-                        // Notification banner
                         if let top = topCreator {
                             NotificationBanner(
                                 creatorName: top.name,
@@ -49,7 +44,6 @@ struct HomeView: View {
                             .padding(.top, 14)
                         }
 
-                        // Section header
                         HStack {
                             Text("TOP CREATORS")
                                 .font(.system(size: 10.5, weight: .semibold))
@@ -64,16 +58,13 @@ struct HomeView: View {
                         .padding(.top, 16)
                         .padding(.bottom, 10)
 
-                        // Creator grid
                         LazyVGrid(
                             columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3),
                             spacing: 10
                         ) {
                             ForEach(creators) { creator in
                                 CreatorCard(creator: creator)
-                                    .onTapGesture {
-                                        selectedCreator = creator
-                                    }
+                                    .onTapGesture { selectedCreator = creator }
                             }
                         }
                         .padding(.horizontal, 20)
@@ -82,18 +73,14 @@ struct HomeView: View {
                 }
             }
 
-            // Bottom nav
             BottomNavBar(activeIndex: 0)
         }
         .sheet(item: $selectedCreator) { creator in
             CreatorDetailView(creator: creator)
         }
-        .onAppear {
-            startInsightRotation()
-        }
+        .onAppear { startInsightRotation() }
     }
 
-    // MARK: Header
     private var headerSection: some View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 3) {
@@ -130,7 +117,6 @@ struct HomeView: View {
         .padding(.bottom, 10)
     }
 
-    // MARK: Tabs
     private var tabSection: some View {
         HStack(spacing: 6) {
             ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
@@ -140,19 +126,12 @@ struct HomeView: View {
                         .foregroundColor(activeTab == index ? Color(hex: "A99FFF") : .white.opacity(0.35))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
-                        .background(
-                            activeTab == index
-                                ? Color(hex: "5B4DFF").opacity(0.15)
-                                : Color.clear
-                        )
+                        .background(activeTab == index ? Color(hex: "5B4DFF").opacity(0.15) : Color.clear)
                         .overlay(
-                            Capsule()
-                                .stroke(
-                                    activeTab == index
-                                        ? Color(hex: "5B4DFF").opacity(0.3)
-                                        : Color.clear,
-                                    lineWidth: 1
-                                )
+                            Capsule().stroke(
+                                activeTab == index ? Color(hex: "5B4DFF").opacity(0.3) : Color.clear,
+                                lineWidth: 1
+                            )
                         )
                         .clipShape(Capsule())
                 }
@@ -166,9 +145,7 @@ struct HomeView: View {
 
     private func startInsightRotation() {
         Timer.scheduledTimer(withTimeInterval: 12, repeats: true) { _ in
-            withAnimation(.easeInOut(duration: 0.4)) {
-                insightIndex += 1
-            }
+            withAnimation(.easeInOut(duration: 0.4)) { insightIndex += 1 }
         }
     }
 }
@@ -180,7 +157,6 @@ struct NotificationBanner: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // Accent bar
             Rectangle()
                 .fill(LinearGradient(
                     colors: [Color(hex: "5B4DFF"), Color(hex: "FF4D8D")],
@@ -192,14 +168,9 @@ struct NotificationBanner: View {
                 .padding(.trailing, 14)
 
             VStack(alignment: .leading, spacing: 4) {
-                Group {
-                    Text("Seems like you're enjoying ")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white)
-                    + Text(creatorName)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(Color(hex: "A99FFF"))
-                }
+                Text("Seems like you're enjoying \(creatorName)")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.white)
 
                 Text(insightText)
                     .font(.system(size: 11.5, weight: .light))
@@ -215,16 +186,11 @@ struct NotificationBanner: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 15)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(hex: "5B4DFF").opacity(0.18),
-                            Color(hex: "FF4D8D").opacity(0.10)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .fill(LinearGradient(
+                    colors: [Color(hex: "5B4DFF").opacity(0.18), Color(hex: "FF4D8D").opacity(0.10)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ))
                 .overlay(
                     RoundedRectangle(cornerRadius: 15)
                         .stroke(Color(hex: "5B4DFF").opacity(0.25), lineWidth: 1)
@@ -241,15 +207,12 @@ struct CreatorCard: View {
 
     var body: some View {
         VStack(spacing: 7) {
-            // Avatar
             ZStack {
                 Circle()
                     .fill(Color.white.opacity(0.05))
                     .frame(width: 50, height: 50)
-
                 Text(creator.emoji)
                     .font(.system(size: 22))
-
                 if creator.isTopPick {
                     Circle()
                         .stroke(Color(hex: "5B4DFF").opacity(0.5), lineWidth: 2)
@@ -264,7 +227,6 @@ struct CreatorCard: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
 
-            // Platform dots
             HStack(spacing: 3) {
                 ForEach(creator.platforms) { platform in
                     Circle()
@@ -282,17 +244,11 @@ struct CreatorCard: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(
-                    creator.isTopPick
-                        ? Color(hex: "5B4DFF").opacity(0.07)
-                        : Color.white.opacity(0.04)
-                )
+                .fill(creator.isTopPick ? Color(hex: "5B4DFF").opacity(0.07) : Color.white.opacity(0.04))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(
-                            creator.isTopPick
-                                ? Color(hex: "5B4DFF").opacity(0.3)
-                                : Color.white.opacity(0.07),
+                            creator.isTopPick ? Color(hex: "5B4DFF").opacity(0.3) : Color.white.opacity(0.07),
                             lineWidth: 1
                         )
                 )
@@ -307,9 +263,7 @@ struct CreatorCard: View {
         }
         .scaleEffect(pressed ? 0.95 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: pressed)
-        .onLongPressGesture(minimumDuration: 0, pressing: { isPressing in
-            pressed = isPressing
-        }, perform: {})
+        .onLongPressGesture(minimumDuration: 0, pressing: { isPressing in pressed = isPressing }, perform: {})
     }
 }
 
@@ -330,20 +284,10 @@ struct BottomNavBar: View {
                 VStack(spacing: 3) {
                     Image(systemName: item.icon)
                         .font(.system(size: 18))
-                        .foregroundColor(
-                            index == activeIndex
-                                ? Color(hex: "A99FFF")
-                                : .white.opacity(0.3)
-                        )
-
+                        .foregroundColor(index == activeIndex ? Color(hex: "A99FFF") : .white.opacity(0.3))
                     Text(item.label)
                         .font(.system(size: 9.5, weight: .medium))
-                        .foregroundColor(
-                            index == activeIndex
-                                ? Color(hex: "A99FFF")
-                                : .white.opacity(0.3)
-                        )
-
+                        .foregroundColor(index == activeIndex ? Color(hex: "A99FFF") : .white.opacity(0.3))
                     if index == activeIndex {
                         Circle()
                             .fill(Color(hex: "7C6FFF"))
