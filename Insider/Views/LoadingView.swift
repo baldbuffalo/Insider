@@ -4,7 +4,6 @@ struct LoadingView: View {
 let user: GoogleUser?
 let onComplete: () -> Void
 
-```
 @State private var completedSteps: Set<Int> = []
 @State private var activeStep: Int = -1
 @State private var visibleSteps: Set<Int> = []
@@ -131,7 +130,6 @@ private func runStep(_ index: Int) {
         }
     }
 }
-```
 
 }
 
@@ -142,7 +140,6 @@ let isVisible: Bool
 let isActive: Bool
 let isDone: Bool
 
-```
 @State private var rotation: Double = 0
 
 var body: some View {
@@ -206,7 +203,6 @@ var body: some View {
     .offset(y: isVisible ? 0 : 10)
     .animation(.easeOut(duration: 0.4), value: isVisible)
 }
-```
 
 }
 
@@ -217,7 +213,6 @@ let offset: CGPoint
 let opacity: Double
 let delay: Double
 
-```
 @State private var breathing = false
 
 var body: some View {
@@ -239,6 +234,5 @@ var body: some View {
         }
         .allowsHitTesting(false)
 }
-```
 
 }
