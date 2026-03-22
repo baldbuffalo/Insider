@@ -2,13 +2,14 @@ name: Insider
 options:
   bundleIdPrefix: com.insider
   deploymentTarget:
-    iOS: "16.0"
-  xcodeVersion: "15.0"
+    iOS: "26.0"
+  xcodeVersion: "26.0"
 
 targets:
   Insider:
     type: application
     platform: iOS
+    deploymentTarget: "26.0"
     sources:
       - path: Insider
     settings:
@@ -17,7 +18,9 @@ targets:
         PRODUCT_NAME: Insider
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1,2"
-        IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+        SDKROOT: iphoneos
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
         CODE_SIGN_IDENTITY: ""
