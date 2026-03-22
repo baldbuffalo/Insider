@@ -119,7 +119,7 @@ private func handleSignIn() {
         case .failure(let error):
             // Ignore user cancellation
             let nsError = error as NSError
-            if nsError.code == ASWebAuthenticationSessionError.canceledLogin.rawValue { return }
+            if nsError.domain == "com.apple.AuthenticationServices.WebAuthenticationSession" && nsError.code == 1 { return }
             errorMessage = error.localizedDescription
             showError = true
         }
