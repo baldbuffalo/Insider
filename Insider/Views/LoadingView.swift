@@ -3,7 +3,6 @@ import SwiftUI
 struct LoadingView: View {
 let onComplete: () -> Void
 
-
 @State private var completedSteps: Set<Int> = []
 @State private var activeStep: Int = -1
 @State private var visibleSteps: Set<Int> = []
@@ -14,10 +13,8 @@ private let steps = LoadingStep.steps
 
 var body: some View {
     ZStack {
-        // Background
         Color(hex: "0D0D14").ignoresSafeArea()
 
-        // Ambient glows
         GlowOrb(color: Color(hex: "5B4DFF"), size: 260, offset: CGPoint(x: -80, y: -160), opacity: 0.18, delay: 0)
         GlowOrb(color: Color(hex: "FF4D8D"), size: 200, offset: CGPoint(x: 80, y: 160),  opacity: 0.15, delay: 2)
         GlowOrb(color: Color(hex: "4DCCFF"), size: 160, offset: CGPoint(x: -60, y: 80),  opacity: 0.12, delay: 1)
@@ -25,7 +22,6 @@ var body: some View {
         VStack(spacing: 0) {
             Spacer()
 
-            // Logo
             VStack(spacing: 10) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16)
@@ -42,13 +38,11 @@ var body: some View {
                 }
 
                 Text("Insider")
-                    .font(.custom("Helvetica Neue", size: 20))
-                    .fontWeight(.heavy)
+                    .font(.system(size: 20, weight: .heavy))
                     .foregroundColor(.white)
             }
             .padding(.bottom, 52)
 
-            // Steps
             VStack(spacing: 0) {
                 ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
                     VStack(spacing: 0) {
@@ -72,7 +66,6 @@ var body: some View {
 
             Spacer()
 
-            // Bottom progress
             VStack(spacing: 10) {
                 ZStack(alignment: .leading) {
                     Capsule()
@@ -96,11 +89,7 @@ var body: some View {
             .padding(.bottom, 48)
         }
     }
-    .onAppear { startSequence() }
-}
-
-private func startSequence() {
-    runStep(0)
+    .onAppear { runStep(0) }
 }
 
 private func runStep(_ index: Int) {
@@ -109,7 +98,6 @@ private func runStep(_ index: Int) {
         return
     }
 
-    // Show step
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
         withAnimation(.easeOut(duration: 0.4)) {
             visibleSteps.insert(index)
@@ -117,7 +105,6 @@ private func runStep(_ index: Int) {
         }
     }
 
-    // Complete step
     DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
         withAnimation(.easeInOut(duration: 0.3)) {
             completedSteps.insert(index)
@@ -130,11 +117,9 @@ private func runStep(_ index: Int) {
         }
     }
 }
-```
 
 }
 
-// MARK: - Step Row
 struct StepRow: View {
 let step: LoadingStep
 let index: Int
@@ -142,38 +127,33 @@ let isVisible: Bool
 let isActive: Bool
 let isDone: Bool
 
-```
 @State private var rotation: Double = 0
 
 var body: some View {
     HStack(spacing: 14) {
-        // Icon circle
         ZStack {
             Circle()
                 .stroke(
-                    isDone
-                        ? Color.clear
-                        : (isActive ? Color(hex: "5B4DFF").opacity(0.6) : Color.white.opacity(0.1)),
+                    isDone ? Color.clear : (isActive ? Color(hex: "5B4DFF").opacity(0.6) : Color.white.opacity(0.1)),
                     lineWidth: 1.5
-                )
-                .background(
-                    Group {
-                        if isDone {
-                            Circle().fill(LinearGradient(colors: [Color(hex: "5B4DFF"), Color(hex: "7C6FFF")], startPoint: .topLeading, endPoint: .bottomTrailing))
-                        } else if isActive {
-                            Circle().fill(Color(hex: "5B4DFF").opacity(0.12))
-                        } else {
-                            Circle().fill(Color.white.opacity(0.04))
-                        }
-                    }
                 )
                 .frame(width: 34, height: 34)
 
             if isDone {
+                Circle()
+                    .fill(LinearGradient(
+                        colors: [Color(hex: "5B4DFF"), Color(hex: "7C6FFF")],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ))
+                    .frame(width: 34, height: 34)
                 Image(systemName: "checkmark")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.white)
             } else if isActive {
+                Circle()
+                    .fill(Color(hex: "5B4DFF").opacity(0.12))
+                    .frame(width: 34, height: 34)
                 Circle()
                     .trim(from: 0, to: 0.75)
                     .stroke(Color(hex: "5B4DFF").opacity(0.8), lineWidth: 2)
@@ -184,12 +164,15 @@ var body: some View {
                             rotation = 360
                         }
                     }
+            } else {
+                Circle()
+                    .fill(Color.white.opacity(0.04))
+                    .frame(width: 34, height: 34)
             }
         }
         .animation(.easeInOut(duration: 0.3), value: isDone)
         .animation(.easeInOut(duration: 0.3), value: isActive)
 
-        // Text
         VStack(alignment: .leading, spacing: 2) {
             Text(step.label)
                 .font(.system(size: 13.5, weight: .medium))
@@ -207,11 +190,9 @@ var body: some View {
     .offset(y: isVisible ? 0 : 10)
     .animation(.easeOut(duration: 0.4), value: isVisible)
 }
-```
 
 }
 
-// MARK: - Glow Orb
 struct GlowOrb: View {
 let color: Color
 let size: CGFloat
@@ -219,7 +200,6 @@ let offset: CGPoint
 let opacity: Double
 let delay: Double
 
-```
 @State private var breathing = false
 
 var body: some View {
