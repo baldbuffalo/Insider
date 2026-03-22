@@ -3,9 +3,11 @@
 <plist version="1.0">
 <dict>
     <key>method</key>
-    <string>ad-hoc</string>
+    <string>release-testing</string>
     <key>teamID</key>
     <string>94MM32TB4P</string>
+    <key>signingStyle</key>
+    <string>manual</string>
     <key>provisioningProfiles</key>
     <dict>
         <key>com.insider.app</key>
