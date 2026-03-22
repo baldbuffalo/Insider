@@ -3,7 +3,7 @@ import SwiftUI
 struct LoadingView: View {
 let onComplete: () -> Void
 
-```
+
 @State private var completedSteps: Set<Int> = []
 @State private var activeStep: Int = -1
 @State private var visibleSteps: Set<Int> = []
@@ -241,6 +241,5 @@ var body: some View {
         }
         .allowsHitTesting(false)
 }
-```
 
 }
