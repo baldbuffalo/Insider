@@ -11,7 +11,6 @@ let givenName: String
 // MARK: - Google Auth Manager
 class GoogleAuthManager: NSObject, ObservableObject, ASWebAuthenticationPresentationContextProviding {
 
-```
 // ⚠️ Replace this with your real Google OAuth Client ID from console.cloud.google.com
 // Steps: Create project → Enable YouTube Data API v3 → Create OAuth 2.0 credentials → iOS app
 private let clientID = "309124691372-g536heqb04ol653m5hgfqpt4dmapd8nf.apps.googleusercontent.com"
@@ -144,6 +143,5 @@ enum AuthError: LocalizedError {
         }
     }
 }
-```
 
 }
