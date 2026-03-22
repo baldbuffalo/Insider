@@ -12,7 +12,7 @@ struct HomeView: View {
 @State private var activeTab: AppTab = .home
 @State private var watchingTab = 0
 @State private var insightIndex = 0
-@State private var searchText = “”
+@State private var searchText = ""
 @State private var showSearch = false
 
 var topCreator: Creator? {
