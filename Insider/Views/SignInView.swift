@@ -3,7 +3,6 @@ import SwiftUI
 struct SignInView: View {
 let onSignedIn: (GoogleUser) -> Void
 
-```
 @StateObject private var authManager = GoogleAuthManager()
 @State private var isLoading = false
 @State private var errorMessage: String? = nil
@@ -126,7 +125,6 @@ private func handleSignIn() {
         }
     }
 }
-```
 
 }
 
@@ -135,7 +133,6 @@ struct FeaturePill: View {
 let icon: String
 let text: String
 
-```
 var body: some View {
     HStack(spacing: 12) {
         Image(systemName: icon)
@@ -155,6 +152,5 @@ var body: some View {
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.07), lineWidth: 1))
     )
 }
-```
 
 }
