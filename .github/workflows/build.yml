@@ -1,0 +1,72 @@
+name: Build IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build & Package IPA
+    runs-on: macos-14          # Apple Silicon runner — Xcode 15 pre-installed
+
+    steps:
+      # ── 1. Checkout ────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Select Xcode version ────────────────────────────────────────
+      - name: Select Xcode 15
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      # ── 3. Install tools ──────────────────────────────────────────────
+      - name: Install XcodeGen and xcpretty
+        run: |
+          brew install xcodegen
+          gem install xcpretty
+
+      # ── 4. Generate .xcodeproj from project.yml ────────────────────────
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      # ── 5. Build archive (no signing) ─────────────────────────────────
+      - name: Build archive
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project Insider.xcodeproj \
+            -scheme Insider \
+            -configuration Release \
+            -archivePath "$PWD/build/Insider.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE="" \
+            | xcpretty
+
+      # ── 6. Package as .ipa ─────────────────────────────────────────────
+      - name: Package IPA
+        run: |
+          APP_PATH=$(find "$PWD/build/Insider.xcarchive/Products/Applications" -name "*.app" | head -1)
+          mkdir -p Payload
+          cp -r "$APP_PATH" Payload/
+          zip -r Insider.ipa Payload/
+          echo "IPA created at: $(pwd)/Insider.ipa"
+          ls -lh Insider.ipa
+
+      # ── 7. Upload IPA as artifact ──────────────────────────────────────
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Insider-IPA
+          path: Insider.ipa
+          retention-days: 30
+
+      # ── 8. Upload build logs on failure ───────────────────────────────
+      - name: Upload build logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: build/
+          retention-days: 7
