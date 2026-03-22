@@ -14,7 +14,7 @@ class GoogleAuthManager: NSObject, ObservableObject, ASWebAuthenticationPresenta
 // ⚠️ Replace this with your real Google OAuth Client ID from console.cloud.google.com
 // Steps: Create project → Enable YouTube Data API v3 → Create OAuth 2.0 credentials → iOS app
   
-private let clientID = 309124691372-g536heqb04ol653m5hgfqpt4dmapd8nf.apps.googleusercontent.com
+private let clientID = "309124691372-g536heqb04ol653m5hgfqpt4dmapd8nf.apps.googleusercontent.com"
 
 // This must match the URL scheme you add to project.yml and Google Console
 // Format: com.googleusercontent.apps.YOUR_CLIENT_ID (reversed client ID)
