@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     name: Build & Package IPA
-    runs-on: macos-14          # Apple Silicon runner — Xcode 15 pre-installed
+    runs-on: macos-26          # Apple Silicon runner — Xcode 26 pre-installed
 
     steps:
       # ── 1. Checkout ────────────────────────────────────────────────────
@@ -16,8 +16,8 @@ jobs:
         uses: actions/checkout@v6.0.2
 
       # ── 2. Select Xcode version ────────────────────────────────────────
-      - name: Select Xcode 15
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+      - name: Select Xcode 26
+        run: sudo xcode-select -s /Applications/Xcode_26.3.app
 
       # ── 3. Install tools ──────────────────────────────────────────────
       - name: Install XcodeGen and xcpretty
