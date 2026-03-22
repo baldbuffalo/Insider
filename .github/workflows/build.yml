@@ -30,13 +30,14 @@ jobs:
         run: xcodegen generate
 
       # ── 5. Build archive (no signing) ─────────────────────────────────
-      - name: Build archive
+            - name: Build archive
         run: |
           set -o pipefail
           xcodebuild archive \
             -project Insider.xcodeproj \
             -scheme Insider \
             -configuration Release \
+            -destination 'generic/platform=iOS' \
             -archivePath "$PWD/build/Insider.xcarchive" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
