@@ -1,3 +1,10 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// HomeView.swift  —  REPLACE the existing file with this one.
+// Only HomeView's init + SettingsView's struct have meaningful changes.
+// Everything else (CreatorCard, DiscoverView, AlertsView, BottomNavBar etc.)
+// is identical to the original — they are included here so you can drop this
+// file in as a complete replacement.
+// ─────────────────────────────────────────────────────────────────────────────
 import SwiftUI
 
 // MARK: - App Tab
@@ -7,8 +14,8 @@ enum AppTab {
 
 // MARK: - Home View
 struct HomeView: View {
-    /// Injected by RootView — either real scraped data or sample fallback.
     let initialCreators: [Creator]
+    let onSignOut: () -> Void          // ← NEW: wired from RootView
 
     @State private var creators: [Creator]
     @State private var selectedCreator: Creator?
@@ -18,14 +25,13 @@ struct HomeView: View {
     @State private var searchText = ""
     @State private var showSearch = false
 
-    init(creators: [Creator]) {
+    init(creators: [Creator], onSignOut: @escaping () -> Void) {
         self.initialCreators = creators
+        self.onSignOut = onSignOut
         _creators = State(initialValue: creators)
     }
 
-    var topCreator: Creator? {
-        creators.max(by: { $0.videoCount < $1.videoCount })
-    }
+    var topCreator: Creator? { creators.max(by: { $0.videoCount < $1.videoCount }) }
 
     var currentInsight: String {
         guard let top = topCreator, !top.insights.isEmpty else { return "" }
@@ -49,7 +55,7 @@ struct HomeView: View {
                 case .home:     watchingScreen
                 case .discover: DiscoverView(onSelect: { selectedCreator = $0 })
                 case .alerts:   AlertsView(topCreator: topCreator, insight: currentInsight)
-                case .settings: SettingsView()
+                case .settings: SettingsView(onSignOut: onSignOut)   // ← pass closure
                 }
             }
 
@@ -64,7 +70,6 @@ struct HomeView: View {
     // MARK: - Watching Screen
     private var watchingScreen: some View {
         VStack(spacing: 0) {
-            // Header
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("GOOD EVENING")
@@ -72,12 +77,8 @@ struct HomeView: View {
                         .foregroundColor(.white.opacity(0.35))
                         .kerning(0.5)
                     HStack(spacing: 0) {
-                        Text("Your ")
-                            .font(.system(size: 22, weight: .heavy))
-                            .foregroundColor(.white)
-                        Text("Creators")
-                            .font(.system(size: 22, weight: .heavy))
-                            .foregroundColor(Color(hex: "7C6FFF"))
+                        Text("Your ").font(.system(size: 22, weight: .heavy)).foregroundColor(.white)
+                        Text("Creators").font(.system(size: 22, weight: .heavy)).foregroundColor(Color(hex: "7C6FFF"))
                     }
                 }
                 Spacer()
@@ -97,40 +98,30 @@ struct HomeView: View {
             .padding(.top, 60)
             .padding(.bottom, 10)
 
-            // Search bar
             if showSearch {
                 HStack(spacing: 10) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.white.opacity(0.3))
-                        .font(.system(size: 13))
+                    Image(systemName: "magnifyingglass").foregroundColor(.white.opacity(0.3)).font(.system(size: 13))
                     TextField("Search creators...", text: $searchText)
-                        .foregroundColor(.white)
-                        .font(.system(size: 14))
-                        .accentColor(Color(hex: "7C6FFF"))
+                        .foregroundColor(.white).font(.system(size: 14)).accentColor(Color(hex: "7C6FFF"))
                     if !searchText.isEmpty {
                         Button(action: { searchText = "" }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.white.opacity(0.3))
+                            Image(systemName: "xmark.circle.fill").foregroundColor(.white.opacity(0.3))
                         }
                     }
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, 14).padding(.vertical, 10)
                 .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.07)))
-                .padding(.horizontal, 20)
-                .padding(.bottom, 8)
+                .padding(.horizontal, 20).padding(.bottom, 8)
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
 
-            // Sub tabs
             HStack(spacing: 6) {
                 ForEach(Array(["Watching", "Discover", "Platforms"].enumerated()), id: \.offset) { index, tab in
                     Button(action: { withAnimation(.easeInOut(duration: 0.2)) { watchingTab = index } }) {
                         Text(tab)
                             .font(.system(size: 11.5, weight: .medium))
                             .foregroundColor(watchingTab == index ? Color(hex: "A99FFF") : .white.opacity(0.35))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 6)
+                            .padding(.horizontal, 14).padding(.vertical, 6)
                             .background(watchingTab == index ? Color(hex: "5B4DFF").opacity(0.15) : Color.clear)
                             .overlay(Capsule().stroke(watchingTab == index ? Color(hex: "5B4DFF").opacity(0.3) : Color.clear, lineWidth: 1))
                             .clipShape(Capsule())
@@ -138,10 +129,8 @@ struct HomeView: View {
                 }
                 Spacer()
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 4)
+            .padding(.horizontal, 20).padding(.bottom, 4)
 
-            // Tab content
             switch watchingTab {
             case 0: creatorGrid
             case 1: DiscoverView(onSelect: { selectedCreator = $0 })
@@ -151,48 +140,35 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Creator Grid
     private var creatorGrid: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
                 if let top = topCreator, !currentInsight.isEmpty {
                     NotificationBanner(creatorName: top.name, insightText: currentInsight)
-                        .padding(.horizontal, 20)
-                        .padding(.top, 14)
+                        .padding(.horizontal, 20).padding(.top, 14)
                 }
-
                 HStack {
                     Text("TOP CREATORS")
-                        .font(.system(size: 10.5, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.3))
-                        .kerning(1)
+                        .font(.system(size: 10.5, weight: .semibold)).foregroundColor(.white.opacity(0.3)).kerning(1)
                     Spacer()
                     Text("\(filteredCreators.count) found")
-                        .font(.system(size: 10.5, weight: .medium))
-                        .foregroundColor(Color(hex: "5B4DFF").opacity(0.8))
+                        .font(.system(size: 10.5, weight: .medium)).foregroundColor(Color(hex: "5B4DFF").opacity(0.8))
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-                .padding(.bottom, 10)
+                .padding(.horizontal, 20).padding(.top, 16).padding(.bottom, 10)
 
                 if filteredCreators.isEmpty {
                     VStack(spacing: 12) {
                         Text("🔍").font(.system(size: 36))
-                        Text("No creators found")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white.opacity(0.4))
+                        Text("No creators found").font(.system(size: 14, weight: .medium)).foregroundColor(.white.opacity(0.4))
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 60)
+                    .frame(maxWidth: .infinity).padding(.top, 60)
                 } else {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
                         ForEach(filteredCreators) { creator in
-                            CreatorCard(creator: creator)
-                                .onTapGesture { selectedCreator = creator }
+                            CreatorCard(creator: creator).onTapGesture { selectedCreator = creator }
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 90)
+                    .padding(.horizontal, 20).padding(.bottom, 90)
                 }
             }
         }
@@ -218,21 +194,13 @@ struct NotificationBanner: View {
         HStack(spacing: 0) {
             Rectangle()
                 .fill(LinearGradient(colors: [Color(hex: "5B4DFF"), Color(hex: "FF4D8D")], startPoint: .top, endPoint: .bottom))
-                .frame(width: 3)
-                .clipShape(Capsule())
-                .padding(.trailing, 14)
-
+                .frame(width: 3).clipShape(Capsule()).padding(.trailing, 14)
             VStack(alignment: .leading, spacing: 4) {
-                Text("Seems like you're enjoying \(creatorName)")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(.white)
+                Text("Seems like you're enjoying \(creatorName)").font(.system(size: 13, weight: .bold)).foregroundColor(.white)
                 Text(insightText)
-                    .font(.system(size: 11.5, weight: .light))
-                    .foregroundColor(.white.opacity(0.5))
-                    .lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-                    .id(insightText)
+                    .font(.system(size: 11.5, weight: .light)).foregroundColor(.white.opacity(0.5))
+                    .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
+                    .transition(.opacity.combined(with: .move(edge: .bottom))).id(insightText)
             }
             Spacer()
         }
@@ -256,40 +224,24 @@ struct CreatorCard: View {
             ZStack {
                 Circle().fill(Color.white.opacity(0.05)).frame(width: 50, height: 50)
                 Text(creator.emoji).font(.system(size: 22))
-                if creator.isTopPick {
-                    Circle().stroke(Color(hex: "5B4DFF").opacity(0.5), lineWidth: 2).frame(width: 56, height: 56)
-                }
+                if creator.isTopPick { Circle().stroke(Color(hex: "5B4DFF").opacity(0.5), lineWidth: 2).frame(width: 56, height: 56) }
             }
-
             Text(creator.name)
-                .font(.system(size: 10.5, weight: .semibold))
-                .foregroundColor(.white.opacity(0.85))
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
-
+                .font(.system(size: 10.5, weight: .semibold)).foregroundColor(.white.opacity(0.85))
+                .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
             HStack(spacing: 3) {
-                ForEach(creator.platforms) { platform in
-                    Circle().fill(Color(hex: platform.color)).frame(width: 5, height: 5)
-                }
+                ForEach(creator.platforms) { platform in Circle().fill(Color(hex: platform.color)).frame(width: 5, height: 5) }
             }
-
-            Text(creator.subtitle)
-                .font(.system(size: 9.5, weight: .light))
-                .foregroundColor(.white.opacity(0.25))
+            Text(creator.subtitle).font(.system(size: 9.5, weight: .light)).foregroundColor(.white.opacity(0.25))
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 8)
-        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12).padding(.horizontal, 8).frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(creator.isTopPick ? Color(hex: "5B4DFF").opacity(0.07) : Color.white.opacity(0.04))
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(creator.isTopPick ? Color(hex: "5B4DFF").opacity(0.3) : Color.white.opacity(0.07), lineWidth: 1))
         )
         .overlay(alignment: .topTrailing) {
-            if creator.isTopPick {
-                Text("★").font(.system(size: 9)).foregroundColor(Color(hex: "A99FFF")).padding(8)
-            }
+            if creator.isTopPick { Text("★").font(.system(size: 9)).foregroundColor(Color(hex: "A99FFF")).padding(8) }
         }
         .scaleEffect(pressed ? 0.95 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: pressed)
@@ -307,28 +259,16 @@ struct DiscoverView: View {
             VStack(spacing: 0) {
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("BASED ON YOUR WATCHING")
-                            .font(.system(size: 10.5, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.3))
-                            .kerning(1)
-                        Text("You might like")
-                            .font(.system(size: 18, weight: .heavy))
-                            .foregroundColor(.white)
+                        Text("BASED ON YOUR WATCHING").font(.system(size: 10.5, weight: .semibold)).foregroundColor(.white.opacity(0.3)).kerning(1)
+                        Text("You might like").font(.system(size: 18, weight: .heavy)).foregroundColor(.white)
                     }
                     Spacer()
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 14)
-
+                .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 14)
                 VStack(spacing: 10) {
-                    ForEach(suggested) { creator in
-                        DiscoverRow(creator: creator)
-                            .onTapGesture { onSelect(creator) }
-                    }
+                    ForEach(suggested) { creator in DiscoverRow(creator: creator).onTapGesture { onSelect(creator) } }
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 90)
+                .padding(.horizontal, 20).padding(.bottom, 90)
             }
         }
     }
@@ -344,44 +284,26 @@ struct DiscoverRow: View {
                 Circle().fill(Color.white.opacity(0.06)).frame(width: 52, height: 52)
                 Text(creator.emoji).font(.system(size: 24))
             }
-
             VStack(alignment: .leading, spacing: 4) {
-                Text(creator.name)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
+                Text(creator.name).font(.system(size: 14, weight: .semibold)).foregroundColor(.white)
                 HStack(spacing: 5) {
                     ForEach(creator.platforms) { platform in
                         HStack(spacing: 3) {
                             Circle().fill(Color(hex: platform.color)).frame(width: 5, height: 5)
-                            Text(platform.rawValue)
-                                .font(.system(size: 10, weight: .regular))
-                                .foregroundColor(.white.opacity(0.4))
+                            Text(platform.rawValue).font(.system(size: 10, weight: .regular)).foregroundColor(.white.opacity(0.4))
                         }
                     }
                 }
             }
-
             Spacer()
-
             VStack(alignment: .trailing, spacing: 3) {
-                Text("Similar to")
-                    .font(.system(size: 9.5))
-                    .foregroundColor(.white.opacity(0.3))
-                Text("KreekCraft")
-                    .font(.system(size: 10.5, weight: .semibold))
-                    .foregroundColor(Color(hex: "A99FFF"))
+                Text("Similar to").font(.system(size: 9.5)).foregroundColor(.white.opacity(0.3))
+                Text("KreekCraft").font(.system(size: 10.5, weight: .semibold)).foregroundColor(Color(hex: "A99FFF"))
             }
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 11))
-                .foregroundColor(.white.opacity(0.2))
+            Image(systemName: "chevron.right").font(.system(size: 11)).foregroundColor(.white.opacity(0.2))
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.04))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.07), lineWidth: 1))
-        )
+        .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.04)).overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.07), lineWidth: 1)))
         .scaleEffect(pressed ? 0.98 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: pressed)
         .onLongPressGesture(minimumDuration: 0, pressing: { isPressing in pressed = isPressing }, perform: {})
@@ -394,9 +316,7 @@ struct PlatformsView: View {
     let onSelect: (Creator) -> Void
     @State private var selectedPlatform: Platform = .youtube
 
-    var filteredCreators: [Creator] {
-        creators.filter { $0.platforms.contains(selectedPlatform) }
-    }
+    var filteredCreators: [Creator] { creators.filter { $0.platforms.contains(selectedPlatform) } }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -406,48 +326,30 @@ struct PlatformsView: View {
                         Button(action: { withAnimation(.easeInOut(duration: 0.2)) { selectedPlatform = platform } }) {
                             HStack(spacing: 6) {
                                 Circle().fill(Color(hex: platform.color)).frame(width: 7, height: 7)
-                                Text(platform.rawValue)
-                                    .font(.system(size: 12, weight: .medium))
+                                Text(platform.rawValue).font(.system(size: 12, weight: .medium))
                                     .foregroundColor(selectedPlatform == platform ? .white : .white.opacity(0.4))
                             }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(
-                                selectedPlatform == platform
-                                    ? Color(hex: platform.color).opacity(0.2)
-                                    : Color.white.opacity(0.05)
-                            )
-                            .overlay(
-                                Capsule().stroke(selectedPlatform == platform ? Color(hex: platform.color).opacity(0.5) : Color.clear, lineWidth: 1)
-                            )
+                            .padding(.horizontal, 14).padding(.vertical, 8)
+                            .background(selectedPlatform == platform ? Color(hex: platform.color).opacity(0.2) : Color.white.opacity(0.05))
+                            .overlay(Capsule().stroke(selectedPlatform == platform ? Color(hex: platform.color).opacity(0.5) : Color.clear, lineWidth: 1))
                             .clipShape(Capsule())
                         }
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 20).padding(.vertical, 12)
             }
-
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 8) {
                     if filteredCreators.isEmpty {
                         VStack(spacing: 12) {
                             Text("😶").font(.system(size: 36))
-                            Text("No creators on \(selectedPlatform.rawValue)")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white.opacity(0.4))
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 60)
+                            Text("No creators on \(selectedPlatform.rawValue)").font(.system(size: 14, weight: .medium)).foregroundColor(.white.opacity(0.4))
+                        }.frame(maxWidth: .infinity).padding(.top, 60)
                     } else {
-                        ForEach(filteredCreators) { creator in
-                            DiscoverRow(creator: creator)
-                                .onTapGesture { onSelect(creator) }
-                        }
+                        ForEach(filteredCreators) { creator in DiscoverRow(creator: creator).onTapGesture { onSelect(creator) } }
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 90)
+                .padding(.horizontal, 20).padding(.bottom, 90)
             }
         }
     }
@@ -470,101 +372,62 @@ struct AlertsView: View {
             VStack(spacing: 0) {
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("RECENT")
-                            .font(.system(size: 10.5, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.3))
-                            .kerning(1)
-                        Text("Alerts")
-                            .font(.system(size: 22, weight: .heavy))
-                            .foregroundColor(.white)
+                        Text("RECENT").font(.system(size: 10.5, weight: .semibold)).foregroundColor(.white.opacity(0.3)).kerning(1)
+                        Text("Alerts").font(.system(size: 22, weight: .heavy)).foregroundColor(.white)
                     }
                     Spacer()
-                    Text("\(mockAlerts.count) new")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(Color(hex: "A99FFF"))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Capsule().fill(Color(hex: "5B4DFF").opacity(0.15)))
+                    Text("\(mockAlerts.count) new").font(.system(size: 11, weight: .medium)).foregroundColor(Color(hex: "A99FFF"))
+                        .padding(.horizontal, 10).padding(.vertical, 5).background(Capsule().fill(Color(hex: "5B4DFF").opacity(0.15)))
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 60)
-                .padding(.bottom, 16)
-
+                .padding(.horizontal, 20).padding(.top, 60).padding(.bottom, 16)
                 VStack(spacing: 8) {
                     ForEach(Array(mockAlerts.enumerated()), id: \.offset) { index, alert in
                         AlertRow(emoji: alert.emoji, title: alert.title, message: alert.body, time: alert.time, isNew: index < 2)
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 90)
+                .padding(.horizontal, 20).padding(.bottom, 90)
             }
         }
     }
 }
 
 struct AlertRow: View {
-    let emoji: String
-    let title: String
-    let message: String
-    let time: String
-    let isNew: Bool
-
+    let emoji: String; let title: String; let message: String; let time: String; let isNew: Bool
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             ZStack {
                 Circle().fill(Color.white.opacity(0.06)).frame(width: 44, height: 44)
                 Text(emoji).font(.system(size: 20))
-                if isNew {
-                    Circle()
-                        .fill(Color(hex: "5B4DFF"))
-                        .frame(width: 8, height: 8)
-                        .offset(x: 16, y: -16)
-                }
+                if isNew { Circle().fill(Color(hex: "5B4DFF")).frame(width: 8, height: 8).offset(x: 16, y: -16) }
             }
-
             VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 13, weight: isNew ? .semibold : .regular))
-                    .foregroundColor(isNew ? .white : .white.opacity(0.6))
-                    .lineLimit(2)
-                Text(message)
-                    .font(.system(size: 11.5, weight: .light))
-                    .foregroundColor(.white.opacity(0.4))
-                    .lineLimit(2)
+                Text(title).font(.system(size: 13, weight: isNew ? .semibold : .regular)).foregroundColor(isNew ? .white : .white.opacity(0.6)).lineLimit(2)
+                Text(message).font(.system(size: 11.5, weight: .light)).foregroundColor(.white.opacity(0.4)).lineLimit(2)
             }
-
             Spacer()
-
-            Text(time)
-                .font(.system(size: 10))
-                .foregroundColor(.white.opacity(0.25))
+            Text(time).font(.system(size: 10)).foregroundColor(.white.opacity(0.25))
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(isNew ? Color(hex: "5B4DFF").opacity(0.07) : Color.white.opacity(0.03))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(isNew ? Color(hex: "5B4DFF").opacity(0.2) : Color.white.opacity(0.05), lineWidth: 1))
-        )
+        .background(RoundedRectangle(cornerRadius: 16).fill(isNew ? Color(hex: "5B4DFF").opacity(0.07) : Color.white.opacity(0.03)).overlay(RoundedRectangle(cornerRadius: 16).stroke(isNew ? Color(hex: "5B4DFF").opacity(0.2) : Color.white.opacity(0.05), lineWidth: 1)))
     }
 }
 
 // MARK: - Settings View
 struct SettingsView: View {
+    let onSignOut: () -> Void          // ← NEW
+
     @State private var notificationsOn = true
     @State private var autoScanOn = true
+    @State private var confirmSignOut = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
                 HStack {
-                    Text("Settings")
-                        .font(.system(size: 22, weight: .heavy))
-                        .foregroundColor(.white)
+                    Text("Settings").font(.system(size: 22, weight: .heavy)).foregroundColor(.white)
                     Spacer()
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 60)
-                .padding(.bottom, 24)
+                .padding(.horizontal, 20).padding(.top, 60).padding(.bottom, 24)
 
                 // Profile card
                 HStack(spacing: 14) {
@@ -572,50 +435,61 @@ struct SettingsView: View {
                         .fill(LinearGradient(colors: [Color(hex: "5B4DFF"), Color(hex: "FF4D8D")], startPoint: .topLeading, endPoint: .bottomTrailing))
                         .frame(width: 52, height: 52)
                         .overlay(Text("GB").font(.system(size: 18, weight: .bold)).foregroundColor(.white))
-
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("Game Buster")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.white)
-                        Text("Free Account")
-                            .font(.system(size: 12))
-                            .foregroundColor(.white.opacity(0.4))
+                        Text("Game Buster").font(.system(size: 15, weight: .semibold)).foregroundColor(.white)
+                        Text("Free Account").font(.system(size: 12)).foregroundColor(.white.opacity(0.4))
                     }
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.2))
+                    Image(systemName: "chevron.right").font(.system(size: 12)).foregroundColor(.white.opacity(0.2))
                 }
                 .padding(16)
                 .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.05)).overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.08), lineWidth: 1)))
-                .padding(.horizontal, 20)
-                .padding(.bottom, 24)
+                .padding(.horizontal, 20).padding(.bottom, 24)
 
                 VStack(spacing: 6) {
                     SettingsHeader(title: "NOTIFICATIONS")
-                    SettingsToggle(icon: "bell.fill", iconColor: "FF4D8D", title: "Push Notifications", subtitle: "Get alerted about new creator info", isOn: $notificationsOn)
-                    SettingsToggle(icon: "arrow.clockwise", iconColor: "5B4DFF", title: "Auto Scan History", subtitle: "Check YouTube history on app open", isOn: $autoScanOn)
+                    SettingsToggle(icon: "bell.fill",      iconColor: "FF4D8D", title: "Push Notifications", subtitle: "Get alerted about new creator info",   isOn: $notificationsOn)
+                    SettingsToggle(icon: "arrow.clockwise", iconColor: "5B4DFF", title: "Auto Scan History",  subtitle: "Check YouTube history on app open", isOn: $autoScanOn)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 16)
+                .padding(.horizontal, 20).padding(.bottom, 16)
 
                 VStack(spacing: 6) {
                     SettingsHeader(title: "CONNECTED ACCOUNTS")
-                    SettingsRow(icon: "play.rectangle.fill", iconColor: "FF4444", title: "YouTube", subtitle: "Connected", hasChevron: true)
-                    SettingsRow(icon: "camera.fill", iconColor: "E1306C", title: "Instagram", subtitle: "Not connected", hasChevron: true)
-                    SettingsRow(icon: "music.note", iconColor: "69C9D0", title: "TikTok", subtitle: "Not connected", hasChevron: true)
+                    SettingsRow(icon: "play.rectangle.fill", iconColor: "FF4444", title: "YouTube",   subtitle: "Connected",     hasChevron: true)
+                    SettingsRow(icon: "camera.fill",         iconColor: "E1306C", title: "Instagram", subtitle: "Not connected", hasChevron: true)
+                    SettingsRow(icon: "music.note",          iconColor: "69C9D0", title: "TikTok",    subtitle: "Not connected", hasChevron: true)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 16)
+                .padding(.horizontal, 20).padding(.bottom, 16)
 
                 VStack(spacing: 6) {
                     SettingsHeader(title: "APP")
-                    SettingsRow(icon: "info.circle.fill", iconColor: "5B4DFF", title: "About Insider", subtitle: "Version 1.0.0", hasChevron: false)
-                    SettingsRow(icon: "hand.raised.fill", iconColor: "FF9500", title: "Privacy Policy", subtitle: "", hasChevron: true)
+                    SettingsRow(icon: "info.circle.fill", iconColor: "5B4DFF", title: "About Insider",  subtitle: "Version 1.0.0", hasChevron: false)
+                    SettingsRow(icon: "hand.raised.fill", iconColor: "FF9500", title: "Privacy Policy", subtitle: "",              hasChevron: true)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 90)
+                .padding(.horizontal, 20).padding(.bottom, 16)
+
+                // Sign Out
+                VStack(spacing: 6) {
+                    SettingsHeader(title: "ACCOUNT")
+                    Button(action: { confirmSignOut = true }) {
+                        HStack(spacing: 12) {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: "FF4444").opacity(0.2))
+                                .frame(width: 34, height: 34)
+                                .overlay(Image(systemName: "rectangle.portrait.and.arrow.right").font(.system(size: 14)).foregroundColor(Color(hex: "FF4444")))
+                            Text("Sign Out").font(.system(size: 13.5, weight: .medium)).foregroundColor(Color(hex: "FF4444"))
+                            Spacer()
+                        }
+                        .padding(14)
+                        .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.04)).overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "FF4444").opacity(0.2), lineWidth: 1)))
+                    }
+                }
+                .padding(.horizontal, 20).padding(.bottom, 90)
             }
+        }
+        .confirmationDialog("Sign out of Insider?", isPresented: $confirmSignOut, titleVisibility: .visible) {
+            Button("Sign Out", role: .destructive) { onSignOut() }
+            Button("Cancel", role: .cancel) {}
         }
     }
 }
@@ -623,39 +497,24 @@ struct SettingsView: View {
 struct SettingsHeader: View {
     let title: String
     var body: some View {
-        HStack {
-            Text(title)
-                .font(.system(size: 10.5, weight: .semibold))
-                .foregroundColor(.white.opacity(0.3))
-                .kerning(1)
-            Spacer()
-        }
-        .padding(.bottom, 6)
-        .padding(.top, 4)
+        HStack { Text(title).font(.system(size: 10.5, weight: .semibold)).foregroundColor(.white.opacity(0.3)).kerning(1); Spacer() }
+            .padding(.bottom, 6).padding(.top, 4)
     }
 }
 
 struct SettingsToggle: View {
-    let icon: String
-    let iconColor: String
-    let title: String
-    let subtitle: String
+    let icon: String; let iconColor: String; let title: String; let subtitle: String
     @Binding var isOn: Bool
-
     var body: some View {
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color(hex: iconColor).opacity(0.2))
-                .frame(width: 34, height: 34)
+            RoundedRectangle(cornerRadius: 8).fill(Color(hex: iconColor).opacity(0.2)).frame(width: 34, height: 34)
                 .overlay(Image(systemName: icon).font(.system(size: 14)).foregroundColor(Color(hex: iconColor)))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.system(size: 13.5, weight: .medium)).foregroundColor(.white)
                 Text(subtitle).font(.system(size: 11, weight: .light)).foregroundColor(.white.opacity(0.35))
             }
             Spacer()
-            Toggle("", isOn: $isOn)
-                .toggleStyle(SwitchToggleStyle(tint: Color(hex: "5B4DFF")))
-                .labelsHidden()
+            Toggle("", isOn: $isOn).toggleStyle(SwitchToggleStyle(tint: Color(hex: "5B4DFF"))).labelsHidden()
         }
         .padding(14)
         .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.04)).overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.07), lineWidth: 1)))
@@ -663,28 +522,17 @@ struct SettingsToggle: View {
 }
 
 struct SettingsRow: View {
-    let icon: String
-    let iconColor: String
-    let title: String
-    let subtitle: String
-    let hasChevron: Bool
-
+    let icon: String; let iconColor: String; let title: String; let subtitle: String; let hasChevron: Bool
     var body: some View {
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color(hex: iconColor).opacity(0.2))
-                .frame(width: 34, height: 34)
+            RoundedRectangle(cornerRadius: 8).fill(Color(hex: iconColor).opacity(0.2)).frame(width: 34, height: 34)
                 .overlay(Image(systemName: icon).font(.system(size: 14)).foregroundColor(Color(hex: iconColor)))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.system(size: 13.5, weight: .medium)).foregroundColor(.white)
-                if !subtitle.isEmpty {
-                    Text(subtitle).font(.system(size: 11, weight: .light)).foregroundColor(.white.opacity(0.35))
-                }
+                if !subtitle.isEmpty { Text(subtitle).font(.system(size: 11, weight: .light)).foregroundColor(.white.opacity(0.35)) }
             }
             Spacer()
-            if hasChevron {
-                Image(systemName: "chevron.right").font(.system(size: 11)).foregroundColor(.white.opacity(0.2))
-            }
+            if hasChevron { Image(systemName: "chevron.right").font(.system(size: 11)).foregroundColor(.white.opacity(0.2)) }
         }
         .padding(14)
         .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.04)).overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.07), lineWidth: 1)))
@@ -696,10 +544,10 @@ struct BottomNavBar: View {
     @Binding var activeTab: AppTab
 
     private let items: [(icon: String, label: String, tab: AppTab)] = [
-        ("house.fill", "Home", .home),
-        ("safari.fill", "Discover", .discover),
-        ("bell.fill", "Alerts", .alerts),
-        ("gearshape.fill", "Settings", .settings)
+        ("house.fill",    "Home",     .home),
+        ("safari.fill",   "Discover", .discover),
+        ("bell.fill",     "Alerts",   .alerts),
+        ("gearshape.fill","Settings", .settings)
     ]
 
     var body: some View {
@@ -708,29 +556,20 @@ struct BottomNavBar: View {
                 Spacer()
                 Button(action: { withAnimation(.easeInOut(duration: 0.2)) { activeTab = item.tab } }) {
                     VStack(spacing: 3) {
-                        Image(systemName: item.icon)
-                            .font(.system(size: 18))
+                        Image(systemName: item.icon).font(.system(size: 18))
                             .foregroundColor(activeTab == item.tab ? Color(hex: "A99FFF") : .white.opacity(0.3))
-                        Text(item.label)
-                            .font(.system(size: 9.5, weight: .medium))
+                        Text(item.label).font(.system(size: 9.5, weight: .medium))
                             .foregroundColor(activeTab == item.tab ? Color(hex: "A99FFF") : .white.opacity(0.3))
-                        if activeTab == item.tab {
-                            Circle().fill(Color(hex: "7C6FFF")).frame(width: 4, height: 4)
-                        }
+                        if activeTab == item.tab { Circle().fill(Color(hex: "7C6FFF")).frame(width: 4, height: 4) }
                     }
                 }
                 Spacer()
             }
         }
-        .padding(.top, 10)
-        .padding(.bottom, 24)
-        .background(
-            Rectangle()
-                .fill(Color(hex: "0D0D14").opacity(0.95))
-                .overlay(alignment: .top) {
-                    Rectangle().fill(Color.white.opacity(0.06)).frame(height: 1)
-                }
-        )
+        .padding(.top, 10).padding(.bottom, 24)
+        .background(Rectangle().fill(Color(hex: "0D0D14").opacity(0.95)).overlay(alignment: .top) {
+            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 1)
+        })
         .ignoresSafeArea(edges: .bottom)
     }
 }
