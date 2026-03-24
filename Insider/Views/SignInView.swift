@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct SignInView: View {
-    let onSignedIn: (GoogleUser) -> Void
+    /// Returns both the user profile AND the access token so the scraper can use it.
+    let onSignedIn: (GoogleUser, String) -> Void
 
     @StateObject private var authManager = GoogleAuthManager()
     @State private var isLoading = false
@@ -12,7 +13,6 @@ struct SignInView: View {
         ZStack {
             Color(hex: "0D0D14").ignoresSafeArea()
 
-            // Ambient glows
             GlowOrb(color: Color(hex: "5B4DFF"), size: 300, offset: CGPoint(x: -80, y: -200), opacity: 0.15, delay: 0)
             GlowOrb(color: Color(hex: "FF4D8D"), size: 220, offset: CGPoint(x: 100, y: 200),  opacity: 0.12, delay: 2)
 
@@ -30,8 +30,7 @@ struct SignInView: View {
                             ))
                             .frame(width: 80, height: 80)
                             .shadow(color: Color(hex: "5B4DFF").opacity(0.5), radius: 24, x: 0, y: 10)
-                        Text("📡")
-                            .font(.system(size: 38))
+                        Text("📡").font(.system(size: 38))
                     }
 
                     Text("Insider")
@@ -56,7 +55,7 @@ struct SignInView: View {
                 .padding(.horizontal, 32)
                 .padding(.bottom, 40)
 
-                // Sign-in button
+                // Sign-in button — GIDSignIn presents its own native sheet on tap
                 VStack(spacing: 14) {
                     Button(action: handleSignIn) {
                         HStack(spacing: 12) {
@@ -64,14 +63,12 @@ struct SignInView: View {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: Color(hex: "0D0D14")))
                                     .scaleEffect(0.85)
-                                Text("Opening sign-in…")
+                                Text("Signing in…")
                                     .font(.system(size: 15, weight: .semibold))
                                     .foregroundColor(Color(hex: "0D0D14"))
                             } else {
                                 ZStack {
-                                    Circle()
-                                        .fill(.white)
-                                        .frame(width: 24, height: 24)
+                                    Circle().fill(.white).frame(width: 24, height: 24)
                                     Text("G")
                                         .font(.system(size: 14, weight: .bold))
                                         .foregroundColor(Color(hex: "4285F4"))
@@ -101,17 +98,6 @@ struct SignInView: View {
                 .padding(.bottom, 52)
             }
         }
-        // ── Google sign-in sheet ────────────────────────────────────────────
-        // Presented when authManager.showWebView flips to true.
-        // onDismiss fires for both Cancel and successful completion so the
-        // loading spinner is always reset if the sheet closes without a user.
-        .sheet(isPresented: $authManager.showWebView, onDismiss: {
-            // Only reset the spinner if we didn't successfully sign in
-            // (a successful sign-in calls onSignedIn and transitions away before this fires).
-            if isLoading { withAnimation { isLoading = false } }
-        }) {
-            GoogleSignInSheet(authManager: authManager)
-        }
         .alert("Sign In Failed", isPresented: $showError) {
             Button("Try Again") { showError = false }
         } message: {
@@ -126,13 +112,15 @@ struct SignInView: View {
 
         authManager.signIn { result in
             switch result {
-            case .success(let user):
-                // Keep isLoading = true so the button stays disabled during the
-                // transition animation; RootView will swap screens immediately.
-                onSignedIn(user)
+            case .success(let payload):
+                // isLoading stays true during the transition animation
+                onSignedIn(payload.user, payload.accessToken)
 
             case .failure(let error):
                 withAnimation { isLoading = false }
+                // Ignore user cancellation (GIDSignIn error code -5)
+                let nsError = error as NSError
+                if nsError.code == -5 { return }
                 errorMessage = error.localizedDescription
                 showError = true
             }
