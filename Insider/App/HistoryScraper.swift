@@ -2,43 +2,49 @@ import WebKit
 import UIKit
 
 // MARK: - History Scraper
-/// Loads youtube.com/feed/history in a hidden WKWebView, scrolls several times
-/// to let YouTube's JS renderer populate the list, then extracts channel names + counts.
+/// Loads youtube.com/feed/history in a hidden WKWebView, scrolls to populate
+/// YouTube's JS renderer, then extracts channel names + view counts.
+///
+/// If an OAuth access token is supplied it first visits Google's OAuthLogin
+/// endpoint which exchanges the token for YouTube session cookies — this is
+/// the bridge between native GIDSignIn auth and the web-based scrape.
 class HistoryScraper: NSObject, ObservableObject, WKNavigationDelegate {
 
-    // Published so views can react, but onComplete closure is the primary callback.
     @Published var channelCounts: [String: Int] = [:]
     @Published var isFinished = false
 
     private var webView: WKWebView?
-    private var holderView: UIView?       // keeps WV in a real hierarchy so JS executes
+    private var holderView: UIView?
     private var onComplete: (([String: Int]) -> Void)?
     private var didComplete = false
     private var scrollsRemaining = 5
 
+    // Tracks whether we're still in the OAuth→session phase
+    private var establishingSession = false
+
     // MARK: - Public API
-    func scrape(completion: @escaping ([String: Int]) -> Void) {
+
+    func scrape(accessToken: String? = nil, completion: @escaping ([String: Int]) -> Void) {
         guard !didComplete else { completion(channelCounts); return }
         onComplete = completion
 
-        DispatchQueue.main.async { self.setupWebView() }
+        DispatchQueue.main.async { self.setupWebView(accessToken: accessToken) }
 
-        // Hard timeout — whatever we have after 18 s is good enough
-        DispatchQueue.main.asyncAfter(deadline: .now() + 18) { [weak self] in
+        // Hard timeout — whatever we have after 22 s is good enough
+        DispatchQueue.main.asyncAfter(deadline: .now() + 22) { [weak self] in
             self?.finish()
         }
     }
 
     // MARK: - Setup
-    private func setupWebView() {
+
+    private func setupWebView(accessToken: String?) {
         let config = WKWebViewConfiguration()
-        // Default data store inherits any cookies the user may already have
-        // from a previous Safari / ASWebAuthenticationSession visit to Google/YouTube.
         config.websiteDataStore = .default()
 
         let wv = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844), configuration: config)
         wv.navigationDelegate = self
-        // Desktop UA gives us the full ytd-* element tree, which is much easier to parse.
+        // Desktop UA gives us the full ytd-* element tree
         wv.customUserAgent = """
             Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) \
             AppleWebKit/537.36 (KHTML, like Gecko) \
@@ -46,7 +52,7 @@ class HistoryScraper: NSObject, ObservableObject, WKNavigationDelegate {
             """
         self.webView = wv
 
-        // Attach to the live key window (alpha ≈ 0, 1×1 px, clipped) so JS runs.
+        // Attach to the live key window (invisible) so JS executes
         if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let keyWindow = scene.windows.first(where: { $0.isKeyWindow }) {
             let holder = UIView(frame: CGRect(x: -2, y: -2, width: 1, height: 1))
@@ -57,30 +63,75 @@ class HistoryScraper: NSObject, ObservableObject, WKNavigationDelegate {
             self.holderView = holder
         }
 
+        if let token = accessToken {
+            // Exchange the OAuth token for YouTube web session cookies.
+            // Google's OAuthLogin endpoint sets the necessary cookies then
+            // redirects — once we leave accounts.google.com we know it's done.
+            establishingSession = true
+            let encoded = token.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? token
+            let loginURL = URL(string:
+                "https://accounts.google.com/accounts/OAuthLogin" +
+                "?source=ogb&service=youtube&access_token=\(encoded)&hl=en"
+            )!
+            wv.load(URLRequest(url: loginURL))
+        } else {
+            // No token — try directly (works if cookies already exist)
+            loadHistoryPage()
+        }
+    }
+
+    private func loadHistoryPage() {
         var req = URLRequest(url: URL(string: "https://www.youtube.com/feed/history")!)
         req.cachePolicy = .reloadIgnoringLocalCacheData
-        wv.load(req)
+        webView?.load(req)
     }
 
     // MARK: - WKNavigationDelegate
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        // Give YouTube's Polymer / LitElement renderer time to paint items.
+        guard let url = webView.url else { finish(); return }
+
+        if establishingSession {
+            // Still bouncing through Google's OAuth redirect chain — wait until
+            // we leave accounts.google.com before loading history.
+            if url.host?.contains("accounts.google.com") == true {
+                return  // another redirect is coming, stay put
+            }
+            // Off Google's accounts domain — session cookies are set.
+            establishingSession = false
+            loadHistoryPage()
+            return
+        }
+
+        // History page loaded — give YouTube's renderer time to paint items.
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
             self?.scrollStep()
         }
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        if establishingSession {
+            // OAuth login failed — fall back to direct history load
+            establishingSession = false
+            loadHistoryPage()
+            return
+        }
         finish()
     }
 
     func webView(_ webView: WKWebView,
                  didFailProvisionalNavigation navigation: WKNavigation!,
                  withError error: Error) {
+        if establishingSession {
+            establishingSession = false
+            loadHistoryPage()
+            return
+        }
         finish()
     }
 
     // MARK: - Scroll → Extract loop
+
     private func scrollStep() {
         guard !didComplete else { return }
 
@@ -100,10 +151,10 @@ class HistoryScraper: NSObject, ObservableObject, WKNavigationDelegate {
     }
 
     // MARK: - JS Extraction
+
     private func extractChannelNames() {
         guard !didComplete else { return }
 
-        // Covers desktop ytd-* elements across several renderer types YouTube uses.
         let js = """
         (function() {
             var counts = {};
@@ -113,8 +164,6 @@ class HistoryScraper: NSObject, ObservableObject, WKNavigationDelegate {
                     counts[name] = (counts[name] || 0) + 1;
                 }
             }
-
-            // Primary: standard video renderer channel name
             document.querySelectorAll([
                 'ytd-video-renderer #channel-name yt-formatted-string',
                 'ytd-video-renderer #channel-name a',
@@ -126,7 +175,6 @@ class HistoryScraper: NSObject, ObservableObject, WKNavigationDelegate {
                 'ytd-rich-item-renderer #channel-name a'
             ].join(', ')).forEach(function(el) { add(el.textContent); });
 
-            // Fallback: any byline / owner text element
             document.querySelectorAll([
                 '#owner-text yt-formatted-string',
                 '#owner-text a',
@@ -144,8 +192,8 @@ class HistoryScraper: NSObject, ObservableObject, WKNavigationDelegate {
                let raw = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                 var parsed: [String: Int] = [:]
                 for (k, v) in raw {
-                    if let n = v as? Int        { parsed[k] = n }
-                    else if let d = v as? Double { parsed[k] = Int(d) }
+                    if let n = v as? Int         { parsed[k] = n }
+                    else if let d = v as? Double  { parsed[k] = Int(d) }
                 }
                 self?.channelCounts = parsed
             }
@@ -154,6 +202,7 @@ class HistoryScraper: NSObject, ObservableObject, WKNavigationDelegate {
     }
 
     // MARK: - Teardown
+
     private func finish() {
         guard !didComplete else { return }
         didComplete = true
@@ -161,7 +210,6 @@ class HistoryScraper: NSObject, ObservableObject, WKNavigationDelegate {
         DispatchQueue.main.async { [self] in
             isFinished = true
             onComplete?(channelCounts)
-            // Clean up the hidden web view
             webView?.stopLoading()
             webView?.navigationDelegate = nil
             webView?.removeFromSuperview()
