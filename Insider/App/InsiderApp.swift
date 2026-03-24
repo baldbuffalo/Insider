@@ -1,4 +1,5 @@
 import SwiftUI
+import GoogleSignIn
 
 @main
 struct InsiderApp: App {
@@ -6,6 +7,10 @@ struct InsiderApp: App {
         WindowGroup {
             RootView()
                 .preferredColorScheme(.dark)
+                // GIDSignIn needs this to handle the OAuth callback URL
+                .onOpenURL { url in
+                    GIDSignIn.sharedInstance.handle(url)
+                }
         }
     }
 }
