@@ -2,23 +2,31 @@ name: Insider
 options:
   bundleIdPrefix: com.insider
   deploymentTarget:
-    iOS: "26.0"
-  xcodeVersion: "26.0"
+    iOS: "16.0"
+  xcodeVersion: "16.0"
+
+packages:
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: "7.1.0"
 
 targets:
   Insider:
     type: application
     platform: iOS
-    deploymentTarget: "26.0"
+    deploymentTarget: "16.0"
     sources:
       - path: Insider
+    dependencies:
+      - package: GoogleSignIn
+        product: GoogleSignIn
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.insider.app
         PRODUCT_NAME: Insider
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1,2"
-        IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "16.0"
         SDKROOT: iphoneos
         SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
         CODE_SIGNING_ALLOWED: NO
@@ -42,3 +50,7 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
+        # Reversed client ID — required for GIDSignIn callback
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - com.googleusercontent.apps.309124691372-g536heqb04ol653m5hgfqpt4dmapd8nf
