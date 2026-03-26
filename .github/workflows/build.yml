@@ -70,7 +70,10 @@ jobs:
       - name: Upload to Install on Air
         id: installonair
         run: |
-          RESPONSE=$(curl -s -F "file=@$PWD/build/Insider.ipa" https://fupload.installonair.com/ipafile)
+          RESPONSE=$(curl -s \
+            -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
+            -F "ipafile=@$PWD/build/Insider.ipa;type=application/octet-stream" \
+            https://fupload.installonair.com/ipafile)
           echo "Response: $RESPONSE"
           INSTALL_LINK=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['url'])")
           echo "INSTALL_LINK=$INSTALL_LINK" >> $GITHUB_ENV
