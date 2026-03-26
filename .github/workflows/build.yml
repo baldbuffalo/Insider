@@ -67,6 +67,23 @@ jobs:
             -exportOptionsPlist ExportOptions.plist \
             -exportPath "$PWD/build"
 
+      - name: Upload to Install on Air
+        id: installonair
+        run: |
+          RESPONSE=$(curl -s -F "file=@$PWD/build/Insider.ipa" https://fupload.installonair.com/ipafile)
+          echo "Response: $RESPONSE"
+          INSTALL_LINK=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['url'])")
+          echo "INSTALL_LINK=$INSTALL_LINK" >> $GITHUB_ENV
+          echo "install_link=$INSTALL_LINK" >> $GITHUB_OUTPUT
+
+      - name: Post install link to job summary
+        run: |
+          echo "## 📲 Install Insider" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Open this link in Safari on your iPad:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**[${{ env.INSTALL_LINK }}](${{ env.INSTALL_LINK }})**" >> $GITHUB_STEP_SUMMARY
+
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v7.0.0
         with:
